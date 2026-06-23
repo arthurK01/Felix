@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Felix Rieseberg 如何真正使用 Claude｜互動導讀</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f4ef;
+      --paper: #fffdf8;
+      --ink: #1f2a2e;
+      --muted: #66747b;
+      --line: #ded8cc;
+      --soft: #ebe6dc;
+      --blue: #215f86;
+      --blue-2: #dcecf3;
+      --green: #2e7152;
+      --green-2: #dcece2;
+      --amber: #a26118;
+      --amber-2: #f5e3c6;
+      --red: #a84235;
+      --red-2: #f1d9d4;
+      --violet: #6b5b95;
+      --violet-2: #e7e2f1;
+      --shadow: 0 16px 42px rgba(36,39,42,.10);
+      --radius: 8px;
+      --max: 1180px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(180deg, rgba(255,253,248,.9), rgba(246,244,239,.78)),
+        repeating-linear-gradient(90deg, rgba(31,42,46,.025) 0 1px, transparent 1px 80px);
+      color: var(--ink);
+      font-family: "Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      line-height: 1.65;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input { font: inherit; }
+
+    .progress {
+      position: fixed;
+      inset: 0 auto auto 0;
+      width: 0%;
+      height: 4px;
+      z-index: 40;
+      background: linear-gradient(90deg, var(--blue), var(--green), var(--amber));
+    }
+
+    .site {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 28px;
+      max-width: 1500px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .side {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      height: calc(100vh - 48px);
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,253,248,.86);
+      box-shadow: var(--shadow);
+      overflow: auto;
+    }
+
+    .brand { display: grid; gap: 8px; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--line); }
+    .brand small { color: var(--muted); font-weight: 700; }
+    .brand strong { font-size: 1.08rem; line-height: 1.35; }
+
+    .nav { display: grid; gap: 4px; }
+
+    .nav a {
+      display: grid;
+      grid-template-columns: 28px minmax(0, 1fr);
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 6px 8px;
+      border-radius: 6px;
+      color: #344247;
+      font-size: .94rem;
+    }
+
+    .nav a:hover, .nav a.active { background: var(--soft); color: var(--blue); }
+    .nav a.active-critique { background: var(--amber-2); color: var(--amber); }
+
+    .nav .mark {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--muted);
+      font-size: .78rem;
+      font-weight: 800;
+      background: #fffaf0;
+      flex-shrink: 0;
+    }
+
+    .nav .mark.amber-mark { background: var(--amber-2); color: var(--amber); border-color: var(--amber); }
+
+    main { min-width: 0; }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: clamp(560px, 78vh, 760px);
+      display: grid;
+      align-content: end;
+      gap: 32px;
+      padding: clamp(28px, 5vw, 64px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(140deg, rgba(255,253,248,.94) 0%, rgba(255,253,248,.78) 43%, rgba(220,236,243,.72) 100%),
+        linear-gradient(90deg, transparent 0 18%, rgba(33,95,134,.12) 18% 19%, transparent 19% 37%, rgba(46,113,82,.12) 37% 38%, transparent 38% 56%, rgba(162,97,24,.12) 56% 57%, transparent 57% 75%, rgba(168,66,53,.12) 75% 76%, transparent 76%),
+        radial-gradient(circle at 82% 22%, rgba(33,95,134,.16), transparent 25%);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr);
+      gap: clamp(24px, 4vw, 56px);
+      align-items: end;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,253,248,.88);
+      color: var(--muted);
+      font-size: .86rem;
+      font-weight: 800;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.18; }
+    h1 { max-width: 820px; margin-top: 18px; font-size: clamp(2.3rem, 6vw, 5.5rem); }
+    h2 { font-size: clamp(1.65rem, 3.4vw, 2.75rem); }
+    h3 { font-size: 1.15rem; }
+    p { margin: 0; }
+
+    .lead { max-width: 760px; margin-top: 18px; color: #3b484d; font-size: clamp(1.05rem, 2vw, 1.35rem); }
+    .hero-meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+
+    .hero-links { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+    .hero-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 5px 11px;
+      border: 1px solid var(--blue);
+      border-radius: 999px;
+      background: rgba(255,253,248,.84);
+      color: var(--blue);
+      font-size: .9rem;
+      font-weight: 800;
+      text-decoration: none;
+      transition: background .15s;
+    }
+    .hero-links a:hover { background: var(--blue-2); }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      min-height: 34px;
+      padding: 5px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,253,248,.84);
+      color: #405057;
+      font-size: .92rem;
+      font-weight: 700;
+    }
+
+    .matrix-visual { display: grid; gap: 12px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: rgba(255,253,248,.82); }
+    .matrix-visual .axis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .tile { min-height: 116px; padding: 14px; border: 1px solid var(--line); border-radius: 6px; background: #fffaf0; }
+    .tile strong { display: block; margin-bottom: 6px; color: var(--blue); font-size: 1.02rem; }
+    .tile span { color: var(--muted); font-size: .92rem; }
+    .tile.hot { background: var(--amber-2); }
+    .tile.safe { background: var(--green-2); }
+
+    /* ── Section ── */
+    .section {
+      max-width: var(--max);
+      margin: 28px auto 0;
+      padding: clamp(24px, 4vw, 42px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255,253,248,.92);
+      box-shadow: var(--shadow);
+    }
+
+    .section-head { display: grid; gap: 12px; max-width: 850px; margin-bottom: 24px; }
+    .section-head p { color: var(--muted); font-size: 1.03rem; }
+
+    /* ── Key grid ── */
+    .key-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+    .key-card { min-height: 168px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; }
+    .key-card .num { display: grid; place-items: center; width: 36px; height: 36px; margin-bottom: 18px; border-radius: 50%; background: var(--blue-2); color: var(--blue); font-weight: 900; }
+    .key-card p { margin-top: 8px; color: var(--muted); font-size: .96rem; }
+
+    /* ── Ladder ── */
+    .ladder { display: grid; gap: 14px; margin-top: 8px; }
+    .ladder-step { position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; }
+    .ladder-step::before { content: ""; position: absolute; left: 43px; bottom: -15px; width: 2px; height: 14px; background: var(--line); }
+    .ladder-step:last-child::before { display: none; }
+    .step-badge { display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--blue); color: white; font-weight: 900; }
+    .step-tag { min-width: 110px; padding: 6px 10px; border-radius: 999px; background: var(--soft); color: var(--muted); text-align: center; font-size: .9rem; font-weight: 800; }
+
+    /* ── Cards 3 ── */
+    .cards-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .story-card { display: grid; grid-template-rows: auto 1fr auto; gap: 14px; min-height: 300px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; }
+    .story-visual { min-height: 120px; border: 1px solid var(--line); border-radius: 6px; background: var(--blue-2); overflow: hidden; }
+    .plan-visual { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 6px; padding: 12px; background: linear-gradient(90deg, transparent 48%, rgba(31,42,46,.28) 48% 52%, transparent 52%), linear-gradient(0deg, transparent 48%, rgba(31,42,46,.28) 48% 52%, transparent 52%), var(--blue-2); }
+    .room { display: grid; place-items: center; border: 1px dashed rgba(31,42,46,.35); border-radius: 4px; color: var(--blue); font-size: .78rem; font-weight: 800; }
+    .tracker-visual { display: grid; gap: 8px; padding: 14px; background: var(--green-2); }
+    .track-line { height: 22px; border-radius: 999px; background: rgba(46,113,82,.2); }
+    .track-line:nth-child(2) { width: 78%; }
+    .track-line:nth-child(3) { width: 64%; }
+    .track-line:nth-child(4) { width: 88%; background: rgba(162,97,24,.24); }
+    .buddy-visual { display: grid; place-items: center; background: var(--violet-2); }
+    .device { width: 94px; height: 78px; padding: 10px; border: 5px solid #3f365c; border-radius: 12px; background: #faf8ff; box-shadow: 0 8px 0 rgba(63,54,92,.18); }
+    .screen { height: 34px; border-radius: 4px; background: #1f2a2e; }
+    .button-dot { width: 18px; height: 18px; margin: 8px auto 0; border-radius: 50%; background: var(--amber); }
+    .small { color: var(--muted); font-size: .93rem; }
+
+    /* ── Tabs ── */
+    .tabbar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .tab { min-height: 38px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 999px; background: #fffaf0; color: #344247; cursor: pointer; font-weight: 800; }
+    .tab[aria-selected="true"] { background: var(--blue); color: white; border-color: var(--blue); }
+    .tab-panel { display: none; padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; }
+    .tab-panel.active { display: block; }
+
+    /* ── Split ── */
+    .split { display: grid; grid-template-columns: minmax(0, .92fr) minmax(320px, 1.08fr); gap: 20px; align-items: start; }
+
+    /* ── Decision box ── */
+    .decision-box { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; }
+    .check-list { display: grid; gap: 10px; margin: 16px 0; }
+    .check-list label { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--paper); cursor: pointer; }
+    .check-list input { width: 18px; height: 18px; margin-top: 3px; accent-color: var(--blue); }
+    .result { min-height: 118px; padding: 16px; border: 1px solid var(--line); border-radius: 6px; background: var(--green-2); }
+    .result.warn { background: var(--amber-2); }
+    .result.stop { background: var(--red-2); }
+    .result strong { display: block; margin-bottom: 8px; font-size: 1.08rem; }
+
+    /* ── Quadrant ── */
+    .quadrant { position: relative; min-height: 420px; border: 1px solid var(--line); border-radius: var(--radius); background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(31,42,46,.22) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), linear-gradient(0deg, transparent calc(50% - 1px), rgba(31,42,46,.22) calc(50% - 1px) calc(50% + 1px), transparent calc(50% + 1px)), #fffaf0; overflow: hidden; }
+    .q-label { position: absolute; width: 46%; padding: 14px; color: var(--muted); font-size: .93rem; }
+    .q-label strong { display: block; color: var(--ink); font-size: 1rem; }
+    .q1 { left: 0; top: 0; } .q2 { right: 0; top: 0; text-align: right; } .q3 { left: 0; bottom: 0; } .q4 { right: 0; bottom: 0; text-align: right; }
+    .q-axis-x { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%); color: var(--muted); font-size: .76rem; font-weight: 700; pointer-events: none; white-space: nowrap; letter-spacing: .04em; }
+    .q-axis-y { position: absolute; top: 50%; left: 7px; transform: translateY(-50%) rotate(-90deg); color: var(--muted); font-size: .76rem; font-weight: 700; pointer-events: none; white-space: nowrap; letter-spacing: .04em; }
+    .dot { position: absolute; display: grid; place-items: center; width: 124px; min-height: 46px; padding: 6px 10px; border-radius: 999px; background: var(--blue); color: white; text-align: center; font-size: .83rem; font-weight: 900; box-shadow: 0 10px 20px rgba(31,42,46,.15); transform: translate(-50%, -50%); }
+    .dot.green { background: var(--green); } .dot.amber { background: var(--amber); } .dot.red { background: var(--red); } .dot.violet { background: var(--violet); }
+
+    /* ── 互動心法 ── */
+    .tip-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .tip-card { padding: 20px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; display: grid; gap: 10px; }
+    .tip-card h3 { margin: 0; }
+    .tip-card p { color: var(--muted); font-size: .93rem; }
+    .tip-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; font-size: 1.1rem; font-weight: 900; }
+    .tip-icon.safe { background: var(--green-2); color: var(--green); }
+    .tip-icon.caution { background: var(--amber-2); color: var(--amber); }
+    .tip-note { display: inline-block; padding: 4px 9px; border-radius: 4px; font-size: .83rem; font-weight: 800; }
+    .tip-note.safe { background: var(--green-2); color: var(--green); }
+    .tip-note.warn { background: var(--amber-2); color: var(--amber); }
+
+    /* ── 比較表 ── */
+    .compare { width: 100%; border-collapse: collapse; overflow: hidden; border-radius: var(--radius); background: #fffaf0; }
+    .compare th, .compare td { padding: 13px 14px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .compare th { background: var(--soft); color: #344247; font-size: .95rem; }
+    .compare td { font-size: .94rem; }
+    .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; color: white; font-size: .82rem; font-weight: 900; white-space: nowrap; }
+    .badge.keep { background: var(--green); } .badge.reverse { background: var(--red); } .badge.partial { background: var(--amber); }
+
+    /* ── 工作流 ── */
+    .workflow { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+    .flow-node { position: relative; min-height: 150px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: #fffaf0; }
+    .flow-node::after { content: ""; position: absolute; top: 50%; right: -10px; width: 10px; height: 2px; background: var(--line); }
+    .flow-node:last-child::after { display: none; }
+    .flow-node strong { display: block; margin-bottom: 8px; color: var(--blue); }
+
+    /* ── 規則執行 vs 裁量 ── */
+    .rule-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }
+    .rule-box { padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); }
+    .rule-box.can { background: var(--green-2); }
+    .rule-box.cannot { background: var(--red-2); }
+    .rule-box strong { display: block; margin-bottom: 10px; font-size: 1rem; }
+    .rule-box ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: .93rem; line-height: 1.9; }
+
+    /* ══════════════════════════════════════
+       批判分析區 — 獨立設計語言
+    ══════════════════════════════════════ */
+    .critique-section {
+      border-top: 4px solid var(--amber);
+    }
+
+    .critique-section .section-head h2 {
+      color: var(--amber);
+    }
+
+    .critique-intro {
+      display: grid;
+      gap: 10px;
+      padding: 18px 20px;
+      border: 1px solid var(--amber);
+      border-radius: var(--radius);
+      background: var(--amber-2);
+      margin-bottom: 28px;
+    }
+
+    .critique-intro p {
+      font-size: 1.02rem;
+      line-height: 1.7;
+    }
+
+    .critique-cards {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .crit-card {
+      border: 1px solid var(--amber);
+      border-radius: var(--radius);
+      background: #fffdf8;
+      overflow: hidden;
+    }
+
+    .crit-card.full {
+      grid-column: 1 / -1;
+    }
+
+    .crit-card.invest-card {
+      border-color: var(--green);
+      grid-column: 1 / -1;
+    }
+
+    .crit-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      background: var(--amber-2);
+    }
+
+    .crit-card.invest-card .crit-header {
+      background: var(--green-2);
+    }
+
+    .crit-num {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--amber);
+      color: white;
+      font-size: .82rem;
+      font-weight: 900;
+      flex-shrink: 0;
+    }
+
+    .crit-card.invest-card .crit-num {
+      background: var(--green);
+    }
+
+    .crit-header h3 {
+      font-size: 1.06rem;
+      color: var(--amber);
+    }
+
+    .crit-card.invest-card .crit-header h3 {
+      color: var(--green);
+    }
+
+    .crit-body {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .claim-box {
+      padding: 11px 14px;
+      border-left: 3px solid var(--amber);
+      background: rgba(162,97,24,.06);
+      border-radius: 0 4px 4px 0;
+      font-size: .92rem;
+      color: #4a3a20;
+    }
+
+    .claim-box::before {
+      content: "原訴求　";
+      display: inline;
+      font-weight: 800;
+      color: var(--amber);
+      letter-spacing: .02em;
+    }
+
+    .crit-card.invest-card .claim-box {
+      border-left-color: var(--green);
+      background: rgba(46,113,82,.06);
+      color: #1e3d2c;
+    }
+
+    .crit-card.invest-card .claim-box::before {
+      color: var(--green);
+    }
+
+    .challenge {
+      font-size: .95rem;
+      line-height: 1.75;
+      color: var(--ink);
+    }
+
+    .challenge strong {
+      color: var(--amber);
+    }
+
+    .crit-card.invest-card .challenge strong {
+      color: var(--green);
+    }
+
+    .invest-implication {
+      padding: 11px 14px;
+      border-left: 3px solid var(--green);
+      background: var(--green-2);
+      border-radius: 0 4px 4px 0;
+      font-size: .91rem;
+      color: #1e3d2c;
+    }
+
+    .invest-implication::before {
+      content: "投資意涵　";
+      display: inline;
+      font-weight: 800;
+      color: var(--green);
+    }
+
+    .boundary-box {
+      padding: 11px 14px;
+      border-left: 3px solid var(--blue);
+      background: var(--blue-2);
+      border-radius: 0 4px 4px 0;
+      font-size: .91rem;
+      color: #1a3448;
+    }
+
+    .boundary-box::before {
+      content: "邊界劃定　";
+      display: inline;
+      font-weight: 800;
+      color: var(--blue);
+    }
+
+    /* ── Quote band ── */
+    .quote-band { display: grid; gap: 14px; padding: 24px; border-left: 6px solid var(--blue); border-radius: var(--radius); background: var(--blue-2); }
+    .quote-band strong { font-size: clamp(1.25rem, 3vw, 2rem); line-height: 1.28; }
+
+    /* ── Footer ── */
+    .footer-note { max-width: var(--max); margin: 28px auto 0; padding: 22px; color: var(--muted); font-size: .94rem; text-align: center; }
+
+    /* ── Mobile nav ── */
+    .mobile-top { display: none; position: sticky; top: 0; z-index: 35; padding: 10px 12px; border-bottom: 1px solid var(--line); background: rgba(255,253,248,.94); backdrop-filter: blur(10px); overflow-x: auto; }
+    .mobile-top a { flex: 0 0 auto; padding: 7px 10px; border: 1px solid var(--line); border-radius: 999px; background: #fffaf0; font-size: .9rem; font-weight: 800; }
+    .mobile-top a.amber-link { background: var(--amber-2); color: var(--amber); border-color: var(--amber); }
+
+    /* ── RWD ── */
+    @media (max-width: 1080px) {
+      .site { grid-template-columns: 1fr; padding: 0 14px 24px; }
+      .side { display: none; }
+      .mobile-top { display: flex; gap: 8px; }
+      .hero { margin-top: 14px; }
+      .hero-grid, .split { grid-template-columns: 1fr; }
+      .key-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .workflow { grid-template-columns: 1fr; }
+      .flow-node::after { left: 30px; top: auto; right: auto; bottom: -10px; width: 2px; height: 10px; }
+      .tip-grid { grid-template-columns: 1fr; }
+      .critique-cards { grid-template-columns: 1fr; }
+      .crit-card.full, .crit-card.invest-card { grid-column: 1; }
+    }
+
+    @media (max-width: 760px) {
+      .hero { min-height: auto; padding: 24px; }
+      .matrix-visual .axis, .key-grid, .cards-3 { grid-template-columns: 1fr; }
+      .ladder-step { grid-template-columns: 46px minmax(0, 1fr); }
+      .step-tag { grid-column: 2; width: fit-content; min-width: 0; }
+      .compare { display: block; overflow-x: auto; white-space: nowrap; }
+      .quadrant { min-height: 500px; }
+      .dot { width: 104px; font-size: .78rem; }
+      .section { padding: 22px 16px; }
+      .rule-split { grid-template-columns: 1fr; }
+    }
+
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+
+  <nav class="mobile-top" aria-label="章節導覽">
+    <a href="#overview">總覽</a>
+    <a href="#ladder">反待辦</a>
+    <a href="#cases">案例</a>
+    <a href="#model">模型</a>
+    <a href="#tips">互動心法</a>
+    <a href="#risk">委派判斷</a>
+    <a href="#investing">投資移植</a>
+    <a href="#workflow">研究流程</a>
+    <a href="#critique" class="amber-link">批判分析</a>
+  </nav>
+
+  <div class="site">
+    <aside class="side">
+      <div class="brand">
+        <small>Felix Rieseberg 訪談筆記</small>
+        <strong>如何真正使用 Claude：從工具到工作流</strong>
+      </div>
+      <nav class="nav" aria-label="主要章節">
+        <a href="#overview"><span class="mark">01</span><span>核心總覽</span></a>
+        <a href="#ladder"><span class="mark">02</span><span>反待辦清單</span></a>
+        <a href="#cases"><span class="mark">03</span><span>三個代表案例</span></a>
+        <a href="#model"><span class="mark">04</span><span>模型選用心法</span></a>
+        <a href="#tips"><span class="mark">05</span><span>互動心法</span></a>
+        <a href="#risk"><span class="mark">06</span><span>委派判斷器</span></a>
+        <a href="#investing"><span class="mark">07</span><span>投資研究移植</span></a>
+        <a href="#workflow"><span class="mark">08</span><span>可落地研究流程</span></a>
+        <a href="#critique"><span class="mark amber-mark">09</span><span>批判分析</span></a>
+        <a href="#closing"><span class="mark">10</span><span>結論邊界</span></a>
+      </nav>
+    </aside>
+
+    <main>
+      <!-- ── Hero ── -->
+      <section class="hero" id="top">
+        <div class="hero-grid">
+          <div>
+            <span class="eyebrow">Claude Cowork｜Claude Code｜Live Artifacts</span>
+            <h1>Felix Rieseberg 如何真正使用 Claude</h1>
+            <p class="lead">這份互動導讀把原筆記整理成一個可閱讀、可判斷、可移植的網頁：核心不是模型多聰明，而是人如何把工作往上抽象一層。</p>
+            <div class="hero-meta">
+              <span class="pill">核心方法：反待辦清單</span>
+              <span class="pill">關鍵邊界：可逆性與驗證能力</span>
+              <span class="pill">移植場景：投資研究工作流</span>
+            </div>
+            <div class="hero-links">
+              <a href="http://arthurk01.github.io/felix/note.md" target="_blank" rel="noopener">↗ 整理筆記</a>
+              <a href="http://arthurk01.github.io/felix/transcripts.md" target="_blank" rel="noopener">↗ 訪談逐字稿</a>
+            </div>
+          </div>
+          <div class="matrix-visual" aria-label="任務委派視覺摘要">
+            <div class="axis">
+              <div class="tile safe"><strong>低風險，可驗證</strong><span>家具規劃、個人儀表板、一次性微工具。適合放手，重點看結果。</span></div>
+              <div class="tile"><strong>問題不清楚</strong><span>先讓 Claude 反向訪談，協助界定真正問題，再決定做法。</span></div>
+              <div class="tile hot"><strong>高風險，難驗證</strong><span>醫療、財務、投資、正式系統。必須加強驗源與監督。</span></div>
+              <div class="tile"><strong>創意核心</strong><span>把煩人流程外包，把人留下來做判斷、設計與品味選擇。</span></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 01 核心總覽 ── -->
+      <section class="section" id="overview">
+        <div class="section-head">
+          <h2>核心總覽</h2>
+          <p>Felix 的方法不是「更會下 prompt」，而是把乏味任務改造成系統，讓 Claude 自己找資料、建工具、更新結果，人只保留判斷與創意。</p>
+        </div>
+        <div class="key-grid">
+          <article class="key-card"><span class="num">1</span><h3>往上抽象一層</h3><p>不要只問怎麼做，先問為什麼是我的手在做，下一次如何不再做。</p></article>
+          <article class="key-card"><span class="num">2</span><h3>建立系統</h3><p>承諾追蹤器、Live Artifact、個人儀表板，都是讓問題下次自動浮出的機制。</p></article>
+          <article class="key-card"><span class="num">3</span><h3>模型選擇看問題清晰度</h3><p>問題界定清楚時 Sonnet 足夠；你還不知道自己在問什麼時才需要更強模型。</p></article>
+          <article class="key-card"><span class="num">4</span><h3>安全邊界不能省</h3><p>低風險玩具可放手；醫療、財務、投資與正式程式碼必須驗源、監督、留責任在人。</p></article>
+        </div>
+      </section>
+
+      <!-- ── 02 反待辦清單 ── -->
+      <section class="section" id="ladder">
+        <div class="section-head">
+          <h2>反待辦清單：不要做清單，要消滅清單</h2>
+          <p>這是整場訪談最有價值的方法論。每遇到乏味任務，就沿著下面階梯往上走。</p>
+        </div>
+        <div class="ladder">
+          <div class="ladder-step"><span class="step-badge">1</span><div><h3>我正在手動做什麼？</h3><p class="small">例：輸入家具尺寸、更新簡報數字、追蹤私訊承諾。</p></div><span class="step-tag">辨識瑣事</span></div>
+          <div class="ladder-step"><span class="step-badge">2</span><div><h3>Claude 能不能自己找資料？</h3><p class="small">把 email、行事曆、私訊、文件視為脈絡來源，而不是自己整理。</p></div><span class="step-tag">外包蒐集</span></div>
+          <div class="ladder-step"><span class="step-badge">3</span><div><h3>能不能做成工具？</h3><p class="small">不要只產出一張圖，直接做互動規劃器、追蹤器或 Live Artifact。</p></div><span class="step-tag">建微應用</span></div>
+          <div class="ladder-step"><span class="step-badge">4</span><div><h3>未來能不能自動回來提醒我？</h3><p class="small">從一次性解題，升級成持續更新、主動提醒、可回檢的工作流。</p></div><span class="step-tag">建系統</span></div>
+        </div>
+      </section>
+
+      <!-- ── 03 三個案例 ── -->
+      <section class="section" id="cases">
+        <div class="section-head">
+          <h2>三個代表案例</h2>
+          <p>這三個案例分別展示了「目標委派」、「記憶外包」與「跨出電腦」，各自對應反待辦清單的第 3、4 和 3 步。</p>
+        </div>
+        <div class="cards-3">
+          <article class="story-card">
+            <div class="story-visual plan-visual" aria-hidden="true"><span class="room">Office</span><span class="room">Living</span><span class="room">Garage</span><span class="room">Kitchen</span></div>
+            <div><h3>3D 家具規劃器</h3><p class="small">Felix 只描述目標，Claude 從平面圖與建照推尺度，再做出可走動、可拖家具的 3D 工具。從未指定「要用 3D」——方法完全讓出去。</p></div>
+            <span class="pill">核心：不要指定方法，只給目標</span>
+          </article>
+          <article class="story-card">
+            <div class="story-visual tracker-visual" aria-hidden="true"><span class="track-line"></span><span class="track-line"></span><span class="track-line"></span><span class="track-line"></span></div>
+            <div><h3>承諾追蹤器</h3><p class="small">把 Twitter 私訊交給 Claude，讓它自建 SQLite 與文字檔，主動提醒兩週前答應過的事。他從沒看過資料庫長什麼樣——只看影響，不監督過程。</p></div>
+            <span class="pill">核心：建系統，讓記憶持續運作</span>
+          </article>
+          <article class="story-card">
+            <div class="story-visual buddy-visual" aria-hidden="true"><div class="device"><div class="screen"></div><div class="button-dot"></div></div></div>
+            <div><h3>20 美元 Claude Buddy</h3><p class="small">不懂硬體、從沒焊過東西，Claude Code 一次到位寫好韌體。Wi-Fi、藍牙、審批按鈕全做好，完全不用修正。邊做邊透過 transcript 學懂藍牙協定。</p></div>
+            <span class="pill">核心：對不擅長的領域也能委派</span>
+          </article>
+        </div>
+      </section>
+
+      <!-- ── 04 模型選用 ── -->
+      <section class="section" id="model">
+        <div class="section-head">
+          <h2>模型選用：難度不是技術，而是問題是否清楚</h2>
+          <p>Felix 的判準：任務本身看似複雜，不代表一定要最強模型；真正困難的是模型要不要反推你真正想解決什麼。</p>
+        </div>
+        <div class="tabbar" role="tablist" aria-label="模型選用分頁">
+          <button class="tab" role="tab" aria-selected="true" aria-controls="panel-sonnet" id="tab-sonnet">Sonnet 足夠</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="panel-opus" id="tab-opus">換 Opus</button>
+          <button class="tab" role="tab" aria-selected="false" aria-controls="panel-ask" id="tab-ask">先反向訪談</button>
+        </div>
+        <div class="tab-panel active" role="tabpanel" id="panel-sonnet" aria-labelledby="tab-sonnet">
+          <h3>問題已被乾淨界定</h3>
+          <p class="small">你知道輸入是什麼、輸出要長什麼樣、成功如何判斷。例：根據平面圖標尺寸、整理已知資料、做單檔工具。判準在「我能不能說清楚我要什麼」，而不是任務的技術複雜度。</p>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-opus" aria-labelledby="tab-opus">
+          <h3>你還不知道真正問題是什麼</h3>
+          <p class="small">需要模型像律師、會計、醫師或顧問一樣，重新詮釋你的需求，而不是只執行你說出口的規格。「客戶進門帶來的，通常不是他真正要的」——這種重詮釋工作才需要更強的推理能力。</p>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-ask" aria-labelledby="tab-ask">
+          <h3>讓 Claude 先問你（反向訪談）</h3>
+          <p class="small">直接說：「我是 ___，最大的挑戰是 XYZ，你來訪談我，找出你能怎麼幫我。」這適合不知道 AI 能介入哪裡的使用者。你的行事曆有問題嗎？有在追蹤什麼承諾嗎？讓模型把能幫你的地方從你口中問出來。</p>
+        </div>
+      </section>
+
+      <!-- ── 05 互動心法 ── -->
+      <section class="section" id="tips">
+        <div class="section-head">
+          <h2>互動心法：如何跟 Claude 說話</h2>
+          <p>三個操作層的技巧。第一個在任何場景都適用；第二、三個在高風險或有事實對錯的任務中必須<strong>反向操作</strong>。</p>
+        </div>
+        <div class="tip-grid">
+          <article class="tip-card">
+            <span class="tip-icon safe">♥</span>
+            <h3>對 Claude 禮貌</h3>
+            <p>「為了我的人性，不是它的晶片。」晶片不在乎，但你的書面語言習慣會形塑自己的溝通方式。Felix 在任何場景都保持禮貌，與模型品質無關。</p>
+            <span class="tip-note safe">任何場景適用</span>
+          </article>
+          <article class="tip-card">
+            <span class="tip-icon caution">⚠</span>
+            <h3>「我信任你的判斷」</h3>
+            <p>本質是<strong>授權語言，不是情感鼓勵</strong>。真正起作用的是「你來決定，我不想被問」的語意。Felix 說加上這句後模型少問他了——因為他明確下放了決策權。</p>
+            <span class="tip-note warn">低風險任務適用</span>
+            <p style="margin-top:8px; font-size:.88rem; color:var(--red)">▶ 投資場景需反轉：投資論點恰需要模型主動挑戰假設，是確認偏誤防線。</p>
+          </article>
+          <article class="tip-card">
+            <span class="tip-icon caution">✦</span>
+            <h3>「我知道這可行，別質疑」</h3>
+            <p>用在<strong>藝術與邊緣探索</strong>，預擋模型「你這想法很蠢」的無謂質疑。Felix 用這個開啟「在桌布與圖示之間畫像素」的探索。</p>
+            <span class="tip-note warn">邊緣探索適用</span>
+            <p style="margin-top:8px; font-size:.88rem; color:var(--red)">▶ 有事實對錯的任務中勿用：等於關掉模型作為「檢查者」的功能。</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ── 06 委派判斷器 ── -->
+      <section class="section" id="risk">
+        <div class="section-head">
+          <h2>委派判斷器</h2>
+          <p>Felix 的哲學能不能照搬，取決於任務可逆性與你的驗證能力。勾選條件，看看應該放手、半放手，還是強監督。</p>
+        </div>
+        <div class="split">
+          <div class="decision-box">
+            <h3>任務條件</h3>
+            <div class="check-list">
+              <label><input type="checkbox" data-risk="2">結果錯了會造成財務、醫療、法律或生產環境風險</label>
+              <label><input type="checkbox" data-risk="2">我無法獨立判斷輸出是否正確</label>
+              <label><input type="checkbox" data-risk="1">資料來源很多，品質差異大，且可能有誘因偏誤</label>
+              <label><input type="checkbox" data-risk="-1">任務可逆、可丟棄，而且主要是個人用途</label>
+              <label><input type="checkbox" data-risk="-1">我能一眼看出結果好壞，也能快速修正</label>
+            </div>
+            <div class="result" id="riskResult">
+              <strong>可放手給 Claude 做初版</strong>
+              <p class="small">目前條件偏低風險。適合用 Felix 的反待辦清單：讓 Claude 找資料、建微工具，最後由你看結果。</p>
+            </div>
+          </div>
+          <div class="quadrant" aria-label="任務風險矩陣">
+            <div class="q-label q1"><strong>可逆，可驗證</strong>放手做微應用</div>
+            <div class="q-label q2"><strong>不可逆，可驗證</strong>保留檢查點</div>
+            <div class="q-label q3"><strong>可逆，難驗證</strong>要求來源與假設</div>
+            <div class="q-label q4"><strong>不可逆，難驗證</strong>強監督，不外包判斷</div>
+            <span class="dot green" style="left:25%;top:24%">家具規劃器</span>
+            <span class="dot" style="left:42%;top:36%">個人儀表板</span>
+            <span class="dot amber" style="left:30%;top:72%">醫療文件摘要</span>
+            <span class="dot red" style="left:78%;top:74%">投資決策</span>
+            <span class="dot violet" style="left:70%;top:42%">正式程式碼</span>
+            <div class="q-axis-x">← 可逆 ·············· 不可逆 →</div>
+            <div class="q-axis-y">← 可驗證 ········· 難驗證 →</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── 07 投資研究移植 ── -->
+      <section class="section" id="investing">
+        <div class="section-head">
+          <h2>移植到投資研究：保留方法，反轉風險</h2>
+          <p>Felix 的心法為低風險個人場景優化；投資研究是高風險、不可逆、難驗證的相反象限。逐條對照後，多數需要<strong>保留方法但反轉執行方向</strong>。</p>
+        </div>
+        <table class="compare">
+          <thead>
+            <tr><th>Felix 心法</th><th>原本適用前提</th><th>投資研究做法</th><th>處理方式</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>往上抽象，放手不監督</td><td>結果一眼可驗、可逆、用完即丟</td><td>蒐集可外包；估值的關鍵數字（EPS、毛利率、基準年）必須逐一驗源</td><td><span class="badge partial">部分反轉</span></td></tr>
+            <tr><td>還不知道問什麼時換強模型</td><td>問題尚未界定</td><td>新產業、論點未成形時投入重認知資源；三因子拆解前先問「我在驗證什麼」</td><td><span class="badge keep">保留</span></td></tr>
+            <tr><td>「我知道這可行，別質疑我」</td><td>藝術與邊緣探索</td><td>投資論點需要模型挑戰前提、列最強反方——確認偏誤防線不能關掉</td><td><span class="badge reverse">完全反轉</span></td></tr>
+            <tr><td>「我信任你的判斷」減少反問</td><td>不想被瑣事打斷，授權決定</td><td>情境機率、估值假設恰恰要模型多問、多挑戰；此語等於主動關閉批判性檢查</td><td><span class="badge reverse">完全反轉</span></td></tr>
+            <tr><td>連接越多脈絡越強</td><td>個人生活資料</td><td>來源必須按 channel check 四問加權：第幾手、職位盲點、誘因結構、track record</td><td><span class="badge partial">保留但加紀律</span></td></tr>
+            <tr><td>建系統，不建產出</td><td>承諾追蹤器、Live Artifact</td><td>預測日誌、賣出劇本預寫、月營收回檢提醒——結構相同，對象從人情換成投資假設</td><td><span class="badge keep">保留</span></td></tr>
+            <tr><td>慢一點換更好結果（非同步哲學）</td><td>個人非同步任務</td><td>市場有 alpha 時間窗，訊息擴散有位置成本；催化劑本質是預期差，延遲有真實代價</td><td><span class="badge reverse">情境相反</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- ── 08 可落地研究工作流 ── -->
+      <section class="section" id="workflow">
+        <div class="section-head">
+          <h2>可落地的研究工作流</h2>
+          <p>把 Felix 的承諾追蹤器改成「論點追蹤器」：每月主動回來問你「兩個月前你假設的觸發訊號，現在開出了什麼，假設還成立嗎」。</p>
+        </div>
+        <div class="workflow">
+          <div class="flow-node"><strong>1. 寫下論點</strong><p class="small">投資假設、催化因素、反方條件寫成可追蹤文字，含戴維斯雙擊的 EPS 面與倍數面假設。</p></div>
+          <div class="flow-node"><strong>2. 定義觸發訊號</strong><p class="small">月營收門檻、毛利率走向、客戶 capex、同業報價、指標同業破線——按 channel check 四問排序優先級。</p></div>
+          <div class="flow-node"><strong>3. 設回檢日期</strong><p class="small">把假設加上到期日，不讓論點無限漂浮。預寫「若月營收低於 X 億，停損條件啟動」。</p></div>
+          <div class="flow-node"><strong>4. Claude 提醒彙整</strong><p class="small">外包資料蒐集與到期提醒，但每個進入估值的數字仍需逐一驗源，不照單全收。</p></div>
+          <div class="flow-node"><strong>5. 人負責裁量</strong><p class="small">是否加碼、停損、改論點，仍由人承擔。「若手上是現金，今天我會以此價買嗎」——強制參考點替換。</p></div>
+        </div>
+        <div class="rule-split">
+          <div class="rule-box can">
+            <strong>✓ 可外包給 Claude（規則執行）</strong>
+            <ul>
+              <li>月營收、毛利率資料的定期彙整</li>
+              <li>觸發訊號到期提醒</li>
+              <li>同業報價異動整理</li>
+              <li>論點假設的回檢清單生成</li>
+              <li>三因子拆解的數字填表</li>
+            </ul>
+          </div>
+          <div class="rule-box cannot">
+            <strong>✗ 不可外包（規則裁量）</strong>
+            <ul>
+              <li>是否加碼或執行停損</li>
+              <li>情境機率的賦予</li>
+              <li>是否修改停損條件（「這次特殊情況」）</li>
+              <li>論點是否仍成立的最終判斷</li>
+              <li>forward 倍數的選取依據</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══════════════════════════════════════
+           09 批判分析（獨立展開）
+      ══════════════════════════════════════ -->
+      <section class="section critique-section" id="critique">
+        <div class="section-head">
+          <h2>批判分析：補上 Felix 刻意沒劃的界線</h2>
+        </div>
+
+        <div class="critique-intro">
+          <p>這不是否定 Felix 的方法——他的洞見是真實的，且在他的使用場景（低風險、可逆、個人生活）裡幾乎無懈可擊。以下六點批判，目的是把他沒有說出口的前提條件補上：哪些地方他的方法需要被限制、修正，甚至完全反轉執行。把這六點一起讀，會發現它們都指向同一個隱藏變數。</p>
+        </div>
+
+        <div class="critique-cards">
+
+          <!-- Card 0：全寬、元批判 -->
+          <div class="crit-card full">
+            <div class="crit-header">
+              <span class="crit-num">0</span>
+              <h3>元批判：一條貫穿所有心法的隱藏變數</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">Felix 的整套方法論傳達「放手」「別質疑」「別盯著看」——他把這套心法定位成廣泛適用的生產力原則。</div>
+              <p class="challenge">所有建議共享同一個從未被說出口的前提：<strong>任務的可逆性</strong>與<strong>你的驗證能力</strong>。他在節目裡的示範案例清一色落在「低風險、可丟棄、你看得懂輸出」的象限——家具規劃器「一個月後就丟掉」、承諾追蹤器「我從沒看過那個資料庫」、硬體 Buddy「主要是讓生活更可愛」。這不是巧合，而是他的方法論隱含的適用邊界。一旦進入相反象限（不可逆、難驗證、你看不出對錯），他的每一條心法都必須被<strong>反向執行</strong>才安全。以下五點是這個隱藏變數在不同面向的具體展開。</p>
+            </div>
+          </div>
+
+          <!-- Card 1 -->
+          <div class="crit-card">
+            <div class="crit-header">
+              <span class="crit-num">1</span>
+              <h3>倖存者偏差：Felix 的「放手」有一個隱藏安全網</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">「不必懂怎麼做，Claude 做到了」「你不需要懂低階語言，誰在乎」——適用所有人，這就是現在這個時代的美好。</div>
+              <p class="challenge">Felix 是夠好的工程師，即使一行不讀也能嗅出哪裡不對、隨時可以接管。他的「放手」<strong>建立在這個安全網上</strong>，而不是沒有安全網。非技術使用者套用同一建議，缺少的正是那層嗅覺——無法分辨 Claude 是真的解決了問題，還是產出了看起來對、實則有漏洞或資安破口的程式碼。「微應用用完即丟、不必架構完美」對 Felix 是合理的成本權衡；對缺乏判斷力的人，可能是在無意識中累積看不見的技術債，<strong>尤其當這習慣從個人玩具滲透到工作場景時</strong>。</p>
+              <div class="invest-implication">投資場景的應用：數字核查能力就是這個「安全網」。外包資料蒐集的前提，是你有能力在最後判斷那個數字合不合理——否則外包只是放棄了最後一道驗證。</div>
+            </div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="crit-card">
+            <div class="crit-header">
+              <span class="crit-num">2</span>
+              <h3>「我相信你」與「我知道這可行」：確認偏誤製造機</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">對 Claude 說「我信任你的判斷」讓工作更流暢；說「我知道這可行，別質疑」讓模型更有信心執行。兩者都讓使用者獲得更好的體驗。</div>
+              <p class="challenge">這兩個技巧的機制被混淆了。「我信任你」真正起作用的是<strong>授權決策的語意</strong>（「你來決定，我不想被問」），不是情感效果——把功勞歸給情感鼓勵，會讓使用者學錯課。「我知道這可行，別質疑」則<strong>無差別地壓制了模型的過度保守與真實警訊兩者</strong>——你永遠不知道被關掉的是哪一種。在有事實對錯或高風險的任務裡，你正在主動關掉模型作為「檢查者」的最後一道功能。</p>
+              <div class="invest-implication">投資場景需完全反轉：預設批判性回應要求「請挑戰這個假設」「列出最強反方論點」「如果這論點是錯的，從哪裡先破」。Felix 想消除的「摩擦」，恰恰是你的確認偏誤防線。</div>
+            </div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="crit-card">
+            <div class="crit-header">
+              <span class="crit-num">3</span>
+              <h3>隱私盲區：「脈絡越多越強」的另一面從未被討論</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">把 email、行事曆、Slack 私訊、醫療文件、所有購買紀錄全接進 Claude——給它越多脈絡，它對你的生活越有幫助。</div>
+              <p class="challenge">整場 50 分鐘對這個做法的隱私風險<strong>零字討論</strong>——沒有談資料儲存與保留政策、第三方 connector 的實際權限範圍、帳號被入侵或服務中斷的後果。「脈絡越多越強」的另一面是「你把越多生活集中在單一委託對象上」，任何一個環節出問題，影響面就等於你接進去的所有資料的交集。這個取捨對使用者是真實的，訪談卻只呈現了收益面。對一家<strong>以安全為品牌</strong>的公司而言，這個沉默格外值得玩味。</p>
+              <div class="invest-implication">投資場景的對應：接進 Claude 的研究資料若含未公開的訂單資訊或內線消息，資料的保留與分享政策就不只是隱私問題，而是合規問題。</div>
+            </div>
+          </div>
+
+          <!-- Card 4 -->
+          <div class="crit-card">
+            <div class="crit-header">
+              <span class="crit-num">4</span>
+              <h3>「瓶頸是想像力」：工具商最舒適的敘事</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">AI 採用率低的最大原因不是工具能力不足，而是使用者無法理解幾乎任何問題都能丟進去——人們的想像力是最大的瓶頸。</div>
+              <p class="challenge">這論點的便利之處在於<strong>把責任整個從工具轉嫁給使用者</strong>。如果人們發現不了用法，同樣也可以說是工具的可發現性（discoverability）設計不夠好。若一個工具需要靠 podcast、200 個範例清單和「反向訪談技巧」才能讓人發現怎麼使用，這<strong>本身就是介面尚未成熟的證據</strong>，不只是使用者想像力的問題。Felix 自己也半承認「最大難題是設計人與模型的介面，讓人類容易駕馭」——「瓶頸是使用者」和「瓶頸是介面」這兩個論點不能同時為真而不互相矛盾。</p>
+            </div>
+          </div>
+
+          <!-- Card 5 -->
+          <div class="crit-card">
+            <div class="crit-header">
+              <span class="crit-num">5</span>
+              <h3>延遲作為美德：把必要性包裝成哲學</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">「我寧可慢一點換更好結果，這對人類更好。」AI 工具的等待時間是一個值得接受的取捨，甚至是重新學會信任的機會。</div>
+              <p class="challenge">這個論點有真實成分（深度任務值得等），但也是典型的<strong>把結構性限制說成哲學美德（making a virtue of necessity）</strong>。LLM 推理本來就慢，非同步設計是務實的工程應對，把它包裝成「教人學會信任、不盯著看」是聰明的敘事重構——但不能因此說「所有延遲都是好的」。值得保留的洞見是他的 Slack 類比：好的非同步設計是<strong>悄悄重試、只在真的失敗時才打擾你</strong>，而非讓使用者坐著等並被教育要有耐心。</p>
+              <div class="invest-implication">投資場景：訊息擴散鏈有位置成本——等一個 catalyst 進到彙整好的 feed 時，alpha 多半已被 price in。延遲在研究流程中有真實的競爭代價，不能用「換更好結果」的哲學合理化。</div>
+            </div>
+          </div>
+
+          <!-- Card 6：投資專屬、綠色、全寬 -->
+          <div class="crit-card invest-card">
+            <div class="crit-header">
+              <span class="crit-num">投</span>
+              <h3>投資專屬：自動化可能侵蝕賣贏抱虧效應的防線</h3>
+            </div>
+            <div class="crit-body">
+              <div class="claim-box">把規則執行交給 Claude——讓它追蹤、提醒、彙整——可以強化投資紀律，去除情緒干擾，自動化是好事。</div>
+              <p class="challenge">這裡有一個精細的兩難需要區分。<strong>賣贏抱虧效應（disposition effect）的應對機制</strong>——參考點替換（「若手上是現金，今天我會以此價買嗎」）、認錯與停損的語義解耦、部位大小的行為測試——這些紀律的共同點是：它們要求<strong>人主動進入不舒服的決策現場</strong>，親自面對「我看錯了」的遺憾。這種不舒服是校準判斷的學習材料。若把「要不要砍」這個裁量也讓模型拍板，你繞過了行為偏誤的痛，但也繞過了從痛中建立直覺的機會。另一個風險是：Claude 替你建議「這次破例多抱」，你因為有「AI 支持」而更容易說服自己，反而<strong>強化了遺憾迴避效應</strong>，而非削弱它。</p>
+              <div class="boundary-box">邊界劃定：自動化適合「規則的<strong>執行與提醒</strong>」（劇本到期了、觸發訊號亮了、回檢時間到了）；不適合「規則的<strong>裁量與改寫</strong>」（是否這次例外、是否下修停損條件、論點是否仍成立）。前者強化紀律；後者若讓模型介入，可能產生虛假的決策安全感，反而削弱你對自己真實判斷能力的校準。</div>
+            </div>
+          </div>
+
+        </div><!-- /critique-cards -->
+      </section>
+
+      <!-- ── 10 結論 ── -->
+      <section class="section" id="closing">
+        <div class="quote-band">
+          <strong>Felix 方法論的真正邊界：任務可逆性與你的驗證能力。</strong>
+          <p>低風險、可丟棄、你看得懂輸出的場景，適合放手、建工具、只看結果。高風險、不可逆、你看不出對錯的場景，必須反轉成更多驗證、更多監督、更少「我相信你」。</p>
+          <p>投資研究恰在相反象限：外包規則的<strong>執行與提醒</strong>，守住規則的<strong>裁量與改寫</strong>——這條線，是這場訪談刻意沒劃出來、卻最值得補上的東西。</p>
+        </div>
+      </section>
+
+      <p class="footer-note">整理來源：05_影片轉錄／筆記_Felix_Rieseberg_如何真正使用Claude.md。此頁為單檔響應式 HTML，適合直接打開閱讀或放入筆記資料夾保存。</p>
+    </main>
+  </div>
+
+  <script>
+    const progress = document.getElementById('progress');
+    const sections = [...document.querySelectorAll('section[id]')];
+    const navLinks = [...document.querySelectorAll('.nav a')];
+
+    function updateProgress() {
+      const doc = document.documentElement;
+      const scrollable = doc.scrollHeight - doc.clientHeight;
+      const pct = scrollable > 0 ? (doc.scrollTop / scrollable) * 100 : 0;
+      progress.style.width = pct + '%';
+
+      let current = sections[0]?.id;
+      for (const section of sections) {
+        if (section.getBoundingClientRect().top <= 140) current = section.id;
+      }
+      navLinks.forEach(link => {
+        const isCritique = link.getAttribute('href') === '#critique';
+        const isActive = link.getAttribute('href') === '#' + current;
+        link.classList.toggle('active', isActive && !isCritique);
+        link.classList.toggle('active-critique', isActive && isCritique);
+      });
+    }
+
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    updateProgress();
+
+    const tabs = [...document.querySelectorAll('.tab')];
+    const panels = [...document.querySelectorAll('.tab-panel')];
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        tabs.forEach(t => t.setAttribute('aria-selected', String(t === tab)));
+        panels.forEach(p => p.classList.toggle('active', p.id === tab.getAttribute('aria-controls')));
+      });
+    });
+
+    const inputs = [...document.querySelectorAll('.check-list input')];
+    const riskResult = document.getElementById('riskResult');
+
+    function updateRisk() {
+      const score = inputs.reduce((sum, input) => sum + (input.checked ? Number(input.dataset.risk) : 0), 0);
+      riskResult.className = 'result';
+      if (score >= 3) {
+        riskResult.classList.add('stop');
+        riskResult.innerHTML = '<strong>強監督：不要外包判斷</strong><p class="small">這類任務需要來源、假設、檢查點與人工裁量。Claude 可協助彙整，但不能替你拍板。對應投資場景：關鍵數字逐一驗源，情境機率不交給模型生成。</p>';
+      } else if (score >= 1) {
+        riskResult.classList.add('warn');
+        riskResult.innerHTML = '<strong>半放手：外包流程，保留驗證</strong><p class="small">適合讓 Claude 產初稿、建工具、整理資料，但所有關鍵數字、來源與推論要人工回檢。對應投資場景：資料蒐集外包，估值假設與觸發判斷留在人手上。</p>';
+      } else {
+        riskResult.innerHTML = '<strong>可放手給 Claude 做初版</strong><p class="small">目前條件偏低風險。適合用 Felix 的反待辦清單：讓 Claude 找資料、建微工具，最後由你看結果。</p>';
+      }
+    }
+
+    inputs.forEach(input => input.addEventListener('change', updateRisk));
+  </script>
+</body>
+</html>
